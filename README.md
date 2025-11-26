@@ -1,1 +1,229 @@
-# stroop_emotional
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Emotional Stroop Test</title>
+<style>
+    body {
+        background: black;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+    }
+    #word {
+        font-size: 80px;
+        margin-top: 150px;
+        height: 160px;
+    }
+    #instructions, #end {
+        font-size: 24px;
+        margin-top: 100px;
+        width: 70%;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.5;
+    }
+    button {
+        font-size: 22px;
+        padding: 10px 20px;
+        margin-top: 20px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<div id="instructions">
+    <h1>Emotional Stroop Test</h1>
+    <p>
+        Twoim zadaniem jest jak najszybciej nacisnąć klawisz:<br><br>
+        <b>R = czerwony</b> &nbsp;&nbsp;
+        <b>G = zielony</b> &nbsp;&nbsp;
+        <b>B = niebieski</b> &nbsp;&nbsp;
+        <b>Y = żółty</b><br><br>
+        Ignoruj treść słowa – liczy się tylko kolor!<br><br>
+        Kliknij przycisk, aby rozpocząć.
+    </p>
+    <button onclick="startTest()">START</button>
+</div>
+
+<div id="word" style="display:none;"></div>
+<div id="end" style="display:none;"></div>
+
+<script>
+// -----------------------------
+// LISTY SŁÓW
+// -----------------------------
+const emotionalWords = ["cierpienie", "depresja", "przygnębienie", "nienawiść", "trauma"];
+const neutralWords   = ["krzesło", "okno", "kartka", "drzewo", "talerz"];
+const colors = ["red", "green", "blue", "yellow"];
+
+// liczba powtórzeń każdego słowa
+const trialsPerWord = 3;
+
+// -----------------------------
+// GENEROWANIE PRÓB
+// -----------------------------
+let trials = [];
+
+emotionalWords.forEach(word => {
+    for (let i = 0; i < trialsPerWord; i++) {
+        trials.push({type: "emotional", word, color: randomColor()});
+    }
+});
+neutralWords.forEach(word => {
+    for (let i = 0; i < trialsPerWord; i++) {
+        trials.push({type: "neutral", word, color: randomColor()});
+    }
+});
+
+// tasowanie
+trials = shuffle(trials);
+
+function randomColor() {
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function shuffle(arr) {
+    return arr.map(v => [Math.random(), v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]);
+}
+
+// -----------------------------
+// ZMIENNE
+// -----------------------------
+let currentTrial = 0;
+let startTime = 0;
+let results = [];
+
+// -----------------------------
+// START TESTU
+// -----------------------------
+function startTest() {
+    document.getElementById("instructions").style.display = "none";
+    showNextTrial();
+}
+
+// -----------------------------
+// PREZENTACJA BODŹCA
+// -----------------------------
+function showNextTrial() {
+    if (currentTrial >= trials.length) {
+        endTest();
+        return;
+    }
+
+    let stim = trials[currentTrial];
+    let wordDiv = document.getElementById("word");
+
+    wordDiv.textContent = stim.word;
+    wordDiv.style.color = stim.color;
+    wordDiv.style.display = "block";
+
+    startTime = performance.now();
+}
+
+// -----------------------------
+// REAKCJA
+// -----------------------------
+document.addEventListener("keydown", function(event) {
+    const key = event.key.toLowerCase();
+
+    if (!["r", "g", "b", "y"].includes(key)) return;
+    if (currentTrial >= trials.length) return;
+
+    const rt = performance.now() - startTime;
+
+    const stim = trials[currentTrial];
+    results.push({
+        type: stim.type,
+        word: stim.word,
+        color: stim.color,
+        response: key,
+        rt: rt.toFixed(2)
+    });
+
+    currentTrial++;
+    showNextTrial();
+});
+
+// -----------------------------
+// ZAKOŃCZENIE TESTU
+// -----------------------------
+function endTest() {
+    document.getElementById("word").style.display = "none";
+
+    let endDiv = document.getElementById("end");
+    endDiv.innerHTML =
+        "<h2>Koniec testu!</h2>" +
+        "<p>Kliknij poniżej, aby pobrać wyniki.</p>";
+
+    endDiv.style.display = "block";
+
+    let csvButton = document.createElement("button");
+    csvButton.textContent = "Pobierz wyniki (CSV)";
+    csvButton.onclick = downloadCSV;
+    endDiv.appendChild(csvButton);
+}
+
+// -----------------------------
+// GENEROWANIE CSV
+// -----------------------------
+function downloadCSV() {
+    let csv = "typ_słowa;słowo;kolor;reakcja;czas_reakcji(ms)\n";
+
+    results.forEach(r => {
+        csv += `${r.type};${r.word};${r.color};${r.response};${r.rt}\n`;
+    });
+
+    const blob = new Blob([csv], {type: "text/csv"});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "wyniki_emotional_stroop.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+</script>
+
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+</body>
+</html>
